@@ -5,14 +5,16 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
+@EnableScheduling
 public class MainApplication {
+
     public static void main(String[] args) {
         SpringApplication.run(MainApplication.class, args);
     }
-
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
@@ -22,7 +24,11 @@ public class MainApplication {
     @Bean
     public CommandLineRunner run(RestTemplate restTemplate) {
         return args -> {
-            this.sampleFetch(restTemplate);
+            try {
+                this.sampleFetch(restTemplate);
+            } catch (Exception e) {
+                System.out.println("Sample fetch failed (API may be down): " + e.getMessage());
+            }
         };
     }
 

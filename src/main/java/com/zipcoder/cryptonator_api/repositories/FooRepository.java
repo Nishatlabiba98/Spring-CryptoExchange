@@ -1,7 +1,13 @@
 package com.zipcoder.cryptonator_api.repositories;
 
-/**
- * Created by leon on 1/22/18.
- */
-public class FooRepository {
+import java.util.Optional;
+
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import com.zipcoder.cryptonator_api.domain.Foo;
+
+@Repository
+public interface FooRepository extends CrudRepository<Foo, Long> {
+    Optional<Foo> findByBaseAndTarget(String base, String target);
 }

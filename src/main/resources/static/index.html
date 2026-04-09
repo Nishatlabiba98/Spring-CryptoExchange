@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CRYPTOX — Exchange Rates</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f5f0eb;
+    --bg2:       #fdf8f4;
+    --bg3:       #ede6de;
+    --border:    #ddd4c8;
+    --green:     #6dbfa0;
+    --green-dim: #6dbfa022;
+    --red:       #e07a7a;
+    --red-dim:   #e07a7a22;
+    --amber:     #e0a96d;
+    --purple:    #a98bd6;
+    --blue:      #7aaee0;
+    --text:      #3a2f28;
+    --text-dim:  #a8968a;
+    --mono:      'JetBrains Mono', monospace;
+    --display:   'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* soft dot pattern background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: .5;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 36px;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--bg2);
+    animation: fadeDown .5s ease both;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--text);
+  }
+  .logo span { color: var(--purple); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 36px 80px;
+  }
+
+  .add-section {
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    animation: fadeUp .4s .1s ease both;
+    box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  }
+
+  .add-label {
+    font-size: 10px;
+    letter-spacing: .12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .add-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+  .add-hint span { color: var(--amber); }
+
+  .add-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .pair-input {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 9px 14px;
+    width: 140px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .pair-input::placeholder { color: var(--text-dim); }
+  .pair-input:focus { border-color: var(--purple); }
+
+  .sep { color: var(--text-dim); font-size: 18px; font-weight: 300; }
+
+  .quick-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: 6px;
+  }
+
+  .quick-btn {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .04em;
+  }
+  .quick-btn:hover { border-color: var(--purple); color: var(--purple); background: #f0eaf8; }
+
+  .track-btn {
+    background: var(--purple);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 20px;
+    cursor: pointer;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    transition: opacity .15s;
+    margin-left: auto;
+  }
+  .track-btn:hover { opacity: .85; }
+  .track-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr 1fr 100px 90px;
+    padding: 8px 18px;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    border-bottom: 1.5px solid var(--border);
+    animation: fadeUp .4s .2s ease both;
+  }
+
+  #ticker-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeUp .4s .3s ease both;
+  }
+
+  .ticker-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr 1fr 100px 90px;
+    align-items: center;
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    transition: box-shadow .15s, background .15s;
+    animation: rowIn .3s ease both;
+    box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  }
+  .ticker-row:hover {
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  }
+
+  .pair-name {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+  .pair-name span { color: var(--text-dim); font-weight: 400; }
+
+  .price-val { font-size: 16px; font-weight: 500; color: var(--text); }
+
+  .change-val {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+  .change-val.up   { color: #3a8a6a; background: #c8f0e0; }
+  .change-val.down { color: #a04040; background: #f5d0d0; }
+  .change-val.flat { color: var(--text-dim); background: var(--bg3); }
+
+  .volume-val  { font-size: 12px; color: var(--text-dim); }
+  .updated-val { font-size: 10px; color: var(--text-dim); }
+
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+  .btn-refresh, .btn-delete {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-refresh:hover { border-color: var(--amber); color: var(--amber); background: #fdf3e3; }
+  .btn-delete:hover  { border-color: var(--red);   color: var(--red);   background: #fde8e8; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 2;
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    background: var(--bg2);
+  }
+  .empty-state strong { display: block; font-size: 15px; color: var(--text); margin-bottom: 8px; }
+
+  .status-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 36px;
+    font-size: 10px;
+    color: var(--text-dim);
+    border-top: 1.5px solid var(--border);
+    background: var(--bg2);
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    letter-spacing: .05em;
+  }
+
+  .flash-green { animation: flashG .6s ease; }
+  .flash-red   { animation: flashR .6s ease; }
+
+  #toast {
+    position: fixed;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 12px;
+    color: var(--text);
+    opacity: 0;
+    transition: all .25s;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    z-index: 100;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.err  { border-color: var(--red);    color: var(--red); }
+  #toast.ok   { border-color: var(--green);  color: var(--green); }
+
+  @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:none} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(10px)}  to{opacity:1;transform:none} }
+  @keyframes rowIn    { from{opacity:0;transform:translateX(-6px)}  to{opacity:1;transform:none} }
+  @keyframes flashG   { 0%,100%{background:var(--bg2)} 50%{background:#c8f0e040} }
+  @keyframes flashR   { 0%,100%{background:var(--bg2)} 50%{background:#f5d0d040} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CRYPTO<span>X</span></div>
+  <div class="header-right">
+    <span><span class="live-dot"></span>&nbsp; LIVE</span>
+    <span id="pair-count">0 PAIRS TRACKED</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<main>
+  <div class="add-section">
+    <div class="add-label">Track a new pair</div>
+    <div class="add-row">
+      <input class="pair-input" id="inp-base"   placeholder="bitcoin"/>
+      <span class="sep">/</span>
+      <input class="pair-input" id="inp-target" placeholder="usd" style="width:100px"/>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickAdd('bitcoin','usd')">BTC/USD</button>
+        <button class="quick-btn" onclick="quickAdd('ethereum','usd')">ETH/USD</button>
+        <button class="quick-btn" onclick="quickAdd('litecoin','usd')">LTC/USD</button>
+        <button class="quick-btn" onclick="quickAdd('bitcoin','eur')">BTC/EUR</button>
+        <button class="quick-btn" onclick="quickAdd('dogecoin','usd')">DOGE/USD</button>
+      </div>
+      <button class="track-btn" id="track-btn" onclick="trackPair()">+ TRACK</button>
+    </div>
+    <div class="add-hint">Use CoinGecko IDs: <span>bitcoin</span>, <span>ethereum</span>, <span>litecoin</span>, <span>dogecoin</span>, <span>solana</span>, <span>cardano</span></div>
+  </div>
+
+  <div class="table-header">
+    <div>PAIR</div>
+    <div>PRICE</div>
+    <div>24H CHANGE</div>
+    <div>24H VOLUME</div>
+    <div>UPDATED</div>
+    <div></div>
+  </div>
+  <div id="ticker-grid">
+    <div class="empty-state">
+      <strong>No pairs tracked yet</strong>
+      Pick a quick-add or type a CoinGecko coin ID above
+    </div>
+  </div>
+</main>
+
+<div class="status-bar">
+  <span>API → <span style="color:var(--text)">localhost:8080/api/crypto</span></span>
+  <span id="last-refresh">Never refreshed</span>
+  <span>Auto-refresh every 5 min</span>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api/crypto';
+
+  function tick() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-US', {hour12: false});
+  }
+  setInterval(tick, 1000); tick();
+
+  let toastTimer;
+  function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.className = '', 2800);
+  }
+
+  function quickAdd(base, target) {
+    document.getElementById('inp-base').value   = base;
+    document.getElementById('inp-target').value = target;
+    trackPair();
+  }
+
+  async function trackPair() {
+    const base   = document.getElementById('inp-base').value.trim().toLowerCase();
+    const target = document.getElementById('inp-target').value.trim().toLowerCase();
+    if (!base || !target) { toast('Enter both coin and currency', 'err'); return; }
+
+    const btn = document.getElementById('track-btn');
+    btn.disabled = true; btn.textContent = 'FETCHING...';
+
+    try {
+      const res = await fetch(`${API}/${base}/${target}`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text());
+      toast(`${base}/${target} added`, 'ok');
+      document.getElementById('inp-base').value   = '';
+      document.getElementById('inp-target').value = '';
+      await loadAll();
+    } catch (e) {
+      toast('Failed — check coin ID or API', 'err');
+    } finally {
+      btn.disabled = false; btn.textContent = '+ TRACK';
+    }
+  }
+
+  async function refreshPair(base, target, rowEl) {
+    try {
+      const res = await fetch(`${API}/${base}/${target}`, { method: 'PUT' });
+      if (!res.ok) throw new Error();
+      const foo = await res.json();
+      updateRow(rowEl, foo);
+      rowEl.classList.remove('flash-green', 'flash-red');
+      void rowEl.offsetWidth;
+      rowEl.classList.add(foo.change >= 0 ? 'flash-green' : 'flash-red');
+      toast(`${base}/${target} refreshed`, 'ok');
+    } catch { toast('Refresh failed', 'err'); }
+  }
+
+  async function deletePair(id) {
+    try {
+      await fetch(`${API}/${id}`, { method: 'DELETE' });
+      await loadAll();
+      toast('Pair removed', '');
+    } catch { toast('Delete failed', 'err'); }
+  }
+
+  function fmtPrice(p) {
+    if (!p && p !== 0) return '—';
+    const n = parseFloat(p);
+    return n < 1
+      ? n.toFixed(6)
+      : n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+
+  function fmtVolume(v) {
+    if (!v && v !== 0) return '—';
+    const n = parseFloat(v);
+    if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return '$' + (n/1e3).toFixed(2) + 'K';
+    return '$' + n.toFixed(2);
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    if (typeof ts === 'object') {
+      const { hour, minute, second } = ts;
+      return `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:${String(second).padStart(2,'0')}`;
+    }
+    return new Date(ts).toLocaleTimeString('en-US', {hour12: false});
+  }
+
+  function changeClass(c) {
+    const n = parseFloat(c);
+    if (isNaN(n)) return 'flat';
+    return n > 0 ? 'up' : n < 0 ? 'down' : 'flat';
+  }
+
+  function updateRow(rowEl, foo) {
+    rowEl.querySelector('.price-val').textContent = '$' + fmtPrice(foo.price);
+    const chEl = rowEl.querySelector('.change-val');
+    const c = parseFloat(foo.change) || 0;
+    chEl.textContent = (c >= 0 ? '+' : '') + c.toFixed(2) + '%';
+    chEl.className   = 'change-val ' + changeClass(foo.change);
+    rowEl.querySelector('.volume-val').textContent  = fmtVolume(foo.volume);
+    rowEl.querySelector('.updated-val').textContent = fmtTime(foo.lastUpdated);
+  }
+
+  function buildRow(foo) {
+    const row = document.createElement('div');
+    row.className = 'ticker-row';
+    row.dataset.id = foo.id;
+    const c = parseFloat(foo.change) || 0;
+    row.innerHTML = `
+      <div class="pair-name">${foo.base.toUpperCase()}<span>/${foo.target.toUpperCase()}</span></div>
+      <div class="price-val">$${fmtPrice(foo.price)}</div>
+      <div class="change-val ${changeClass(foo.change)}">${(c>=0?'+':'')}${c.toFixed(2)}%</div>
+      <div class="volume-val">${fmtVolume(foo.volume)}</div>
+      <div class="updated-val">${fmtTime(foo.lastUpdated)}</div>
+      <div class="row-actions">
+        <button class="btn-refresh">↻</button>
+        <button class="btn-delete">✕</button>
+      </div>
+    `;
+    row.querySelector('.btn-refresh').onclick = () => refreshPair(foo.base, foo.target, row);
+    row.querySelector('.btn-delete').onclick  = () => deletePair(foo.id);
+    return row;
+  }
+
+  async function loadAll() {
+    try {
+      const res  = await fetch(API);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const grid = document.getElementById('ticker-grid');
+      grid.innerHTML = '';
+
+      if (!data.length) {
+        grid.innerHTML = `<div class="empty-state">
+          <strong>No pairs tracked yet</strong>
+          Pick a quick-add or type a CoinGecko coin ID above
+        </div>`;
+      } else {
+        data.forEach(foo => grid.appendChild(buildRow(foo)));
+      }
+
+      document.getElementById('pair-count').textContent =
+        data.length + ' PAIR' + (data.length !== 1 ? 'S' : '') + ' TRACKED';
+      document.getElementById('last-refresh').textContent =
+        'Last refresh: ' + new Date().toLocaleTimeString('en-US', {hour12: false});
+    } catch {
+      document.getElementById('last-refresh').textContent = 'Connection error';
+    }
+  }
+
+  loadAll();
+  setInterval(loadAll, 300000);
+</script>
+</body>
+</html>
