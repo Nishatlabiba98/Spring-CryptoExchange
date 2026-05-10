@@ -1,6 +1,5 @@
 # Cryptocurrencies exchange rates API
 * Uses the public [CryptoCompare price API](https://min-api.cryptocompare.com/documentation?key=Price&cat=singleSymbolPriceEndpoint) instead of the unavailable Cryptonator API.
-* The information should be updated every 5 minutes.
 * Ensure that your project architecture is as clean as possible
     * **Note:**
         * `Repository` implements [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) functionality.

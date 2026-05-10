@@ -43,10 +43,7 @@ public class CryptocurrencyPriceService {
                         HttpStatus.BAD_GATEWAY, "Price API returned an unexpected response");
             }
 
-            return new CryptocurrencyPrice(
-                    normalizedBase,
-                    normalizedQuote,
-                    amount.decimalValue());
+            return new CryptocurrencyPrice(normalizedBase, normalizedQuote, parseAmount(amount));
         } catch (RestClientException exception) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY,
@@ -59,5 +56,14 @@ public class CryptocurrencyPriceService {
 
     private String normalize(String symbol) {
         return symbol.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private BigDecimal parseAmount(JsonNode amount) {
+        try {
+            return amount.isNumber() ? amount.decimalValue() : new BigDecimal(amount.asText());
+        } catch (NumberFormatException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Price API returned an invalid amount", exception);
+        }
     }
 }
