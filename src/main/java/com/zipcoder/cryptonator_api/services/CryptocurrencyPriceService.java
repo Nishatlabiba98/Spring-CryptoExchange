@@ -1,5 +1,6 @@
 package com.zipcoder.cryptonator_api.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.zipcoder.cryptonator_api.domain.CryptocurrencyPrice;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -9,7 +10,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.Locale;
 
 @Service
@@ -31,10 +31,10 @@ public class CryptocurrencyPriceService {
                 String.format("%s?fsym=%s&tsyms=%s", priceApiBaseUrl, normalizedBase, normalizedQuote);
 
         try {
-            Map<?, ?> response = restTemplate.getForObject(requestUrl, Map.class);
+            JsonNode response = restTemplate.getForObject(requestUrl, JsonNode.class);
 
-            Object amount = response == null ? null : response.get(normalizedQuote);
-            if (amount == null) {
+            JsonNode amount = response == null ? null : response.get(normalizedQuote);
+            if (amount == null || amount.isNull()) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY, "Price API returned an unexpected response");
             }
@@ -42,7 +42,7 @@ public class CryptocurrencyPriceService {
             return new CryptocurrencyPrice(
                     normalizedBase,
                     normalizedQuote,
-                    new BigDecimal(String.valueOf(amount)));
+                    amount.decimalValue());
         } catch (RestClientException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to fetch price quote", exception);
         }
