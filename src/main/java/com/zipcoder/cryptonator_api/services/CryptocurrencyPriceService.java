@@ -32,8 +32,12 @@ public class CryptocurrencyPriceService {
 
         try {
             JsonNode response = restTemplate.getForObject(requestUrl, JsonNode.class);
+            if (response == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY, "Price API returned an empty response");
+            }
 
-            JsonNode amount = response == null ? null : response.get(normalizedQuote);
+            JsonNode amount = response.get(normalizedQuote);
             if (amount == null || amount.isNull()) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY, "Price API returned an unexpected response");
@@ -44,7 +48,12 @@ public class CryptocurrencyPriceService {
                     normalizedQuote,
                     amount.decimalValue());
         } catch (RestClientException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to fetch price quote", exception);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    String.format(
+                            "Unable to fetch price quote from CryptoCompare (%s)",
+                            exception.getClass().getSimpleName()),
+                    exception);
         }
     }
 
